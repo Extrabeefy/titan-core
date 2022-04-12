@@ -18,7 +18,7 @@ var LOGIN_PROOF = byte(0x01)
 var REALMLIST = byte(0x10)
 
 func main() {
-	log.Print("Starting login server")
+	log.Print("Starting login serve")
 	// Listen for incoming connections.
 	l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
 	if err != nil {
