@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "system",
+    srcs = [
+        "session.go",
+        "state.go",
+        "updater.go",
+    ],
+    importpath = "github.com/Extrabeefy/titan_core/server/world/system",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/config",
+        "//lib/util",
+        "//server/world/channels",
+        "//server/world/data/dynamic",
+        "//server/world/data/dynamic/interfaces",
+        "//server/world/data/static",
+        "//server/world/packet",
+        "@com_github_sirupsen_logrus//:logrus",
+    ],
+)

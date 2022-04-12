@@ -1,0 +1,27 @@
+package packet
+
+import (
+	"bytes"
+	"encoding/binary"
+
+	"github.com/Extrabeefy/titan_core/server/world/data/static"
+)
+
+// ServerPong is sent back in response to ClientPing.
+type ServerPong struct {
+	Pong uint32
+}
+
+// ToBytes writes out the packet to an array of bytes.
+func (pkt *ServerPong) ToBytes() ([]byte, error) {
+	buffer := bytes.NewBufferString("")
+
+	binary.Write(buffer, binary.LittleEndian, pkt.Pong)
+
+	return buffer.Bytes(), nil
+}
+
+// OpCode gets the opcode of the packet.
+func (*ServerPong) OpCode() static.OpCode {
+	return static.OpCodeServerPong
+}

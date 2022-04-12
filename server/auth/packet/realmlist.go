@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/data/static"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/session"
+	"github.com/Extrabeefy/titan_core/server/auth/data/static"
+	"github.com/Extrabeefy/titan_core/server/auth/session"
 )
 
 // ClientRealmlist packet contains no fields.

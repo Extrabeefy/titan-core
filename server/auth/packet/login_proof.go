@@ -6,10 +6,10 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/jeshuamorrissey/wow_server_go/lib/util"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/data/static"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/session"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/srp"
+	"github.com/Extrabeefy/titan_core/lib/util"
+	"github.com/Extrabeefy/titan_core/server/auth/data/static"
+	"github.com/Extrabeefy/titan_core/server/auth/session"
+	"github.com/Extrabeefy/titan_core/server/auth/srp"
 )
 
 // ClientLoginProof encodes proof that the client has the correct information.

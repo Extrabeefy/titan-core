@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "messages",
+    srcs = [
+        "combat.go",
+        "unit.go",
+    ],
+    importpath = "github.com/Extrabeefy/titan_core/server/world/data/dynamic/messages",
+    visibility = ["//visibility:public"],
+    deps = ["//server/world/data/dynamic/interfaces"],
+)
