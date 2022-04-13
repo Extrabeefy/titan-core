@@ -48,25 +48,21 @@ func GenerateVerifier(accountName, password string, salt *big.Int) *big.Int {
 	return g.Exp(g, x, N())
 }
 
-// GeneratePublicEphemeral calculaes the B value given b & v.
-func GeneratePublicEphemeral(v *big.Int, b *big.Int) *big.Int {
+// GenerateEphemeral generates a (private, public) ephemeral pair given a user's
+// verifier.
+func GenerateEphemeral(v *big.Int) (*big.Int, *big.Int) {
+	// TODO(jeshua): Make this a random number.
+	b := big.NewInt(0)
+	b.SetString("3679141816495610969398422835318306156547245306", 10)
+
 	g := big.NewInt(int64(G))
 
 	B := big.NewInt(0)
 	B.Mul(v, big.NewInt(3))
 	B.Add(B, g.Exp(g, b, N()))
 	B.Mod(B, N())
-	return B
-}
 
-// GenerateEphemeralPair generates a (private, public) ephemeral pair given a user's
-// verifier.
-func GenerateEphemeralPair(v *big.Int) (*big.Int, *big.Int) {
-	// TODO(jeshua): Make this a random number.
-	b := big.NewInt(0)
-	b.SetString("3679141816495610969398422835318306156547245306", 10)
-
-	return b, GeneratePublicEphemeral(v, b)
+	return b, B
 }
 
 func padBigIntBytes(data []byte, nBytes int) []byte {

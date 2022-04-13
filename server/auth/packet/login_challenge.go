@@ -1,21 +1,25 @@
 package packet
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
-	"io"
 	"math/big"
-	"strings"
 
-	"github.com/jeshuamorrissey/wow_server_go/lib/util"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/data/static"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/session"
-	"github.com/jeshuamorrissey/wow_server_go/server/auth/srp"
+	"github.com/Extrabeefy/titan-core/auth_server/srp"
+	"gitlab.com/Extrabeefy/titan-core/packet"
+)
+
+// OpCodes used by the AuthServer.
+const (
+	ClientLoginChallengeOpCode = 0
+	ServerLoginChallengeOpCode = 0
 )
 
 // ClientLoginChallenge encodes information about a new connection to the
 // login server.
 type ClientLoginChallenge struct {
+	Error          uint8
 	GameName       [4]byte
 	Version        [3]uint8
 	Build          uint16
@@ -29,7 +33,9 @@ type ClientLoginChallenge struct {
 
 // Read will load a ClientLoginChallenge packet from a buffer.
 // An error will be returned if at least one of the fields didn't load correctly.
-func (pkt *ClientLoginChallenge) FromBytes(state *session.State, buffer io.Reader) error {
+func (pkt *ClientLoginChallenge) Read(buffer *bufio.Reader) error {
+	binary.Read(buffer, binary.LittleEndian, &pkt.Error)
+	buffer.Read(make([]byte, 2)) // unused: packet length
 	binary.Read(buffer, binary.LittleEndian, &pkt.GameName)
 	binary.Read(buffer, binary.LittleEndian, &pkt.Version)
 	binary.Read(buffer, binary.LittleEndian, &pkt.Build)
@@ -46,79 +52,52 @@ func (pkt *ClientLoginChallenge) FromBytes(state *session.State, buffer io.Reade
 	return binary.Read(buffer, binary.LittleEndian, &pkt.AccountName)
 }
 
-// OpCode gets the opcode of the packet.
-func (*ClientLoginChallenge) OpCode() static.OpCode {
-	return static.OpCodeLoginChallenge
-}
-
 // ServerLoginChallenge is the server's response to a client's challenge. It contains
 // some SRP information used for handshaking.
 type ServerLoginChallenge struct {
-	Error   static.LoginErrorCode
+	Error   uint8
 	B       big.Int
 	Salt    big.Int
 	SaltCRC big.Int
 }
 
 // Bytes writes out the packet to an array of bytes.
-func (pkt *ServerLoginChallenge) ToBytes(state *session.State) ([]byte, error) {
+func (pkt *ServerLoginChallenge) Bytes() []byte {
 	buffer := bytes.NewBufferString("")
 
+	buffer.WriteByte(ServerLoginChallengeOpCode)
 	buffer.WriteByte(0) // unk1
-	buffer.WriteByte(uint8(pkt.Error))
+	buffer.WriteByte(pkt.Error)
 
 	if pkt.Error == 0 {
-		buffer.Write(util.PadBigIntBytes(util.ReverseBytes(pkt.B.Bytes()), 32))
+		buffer.Write(padBigIntBytes(reverse(pkt.B.Bytes()), 32))
 		buffer.WriteByte(1)
 		buffer.WriteByte(srp.G)
 		buffer.WriteByte(32)
-		buffer.Write(util.ReverseBytes(srp.N().Bytes()))
-		buffer.Write(util.PadBigIntBytes(util.ReverseBytes(pkt.Salt.Bytes()), 32))
-		buffer.Write(util.PadBigIntBytes(util.ReverseBytes(pkt.SaltCRC.Bytes()), 16))
+		buffer.Write(reverse(srp.N().Bytes()))
+		buffer.Write(padBigIntBytes(reverse(pkt.Salt.Bytes()), 32))
+		buffer.Write(padBigIntBytes(reverse(pkt.SaltCRC.Bytes()), 16))
 		buffer.WriteByte(0) // unk2
 	}
 
-	return buffer.Bytes(), nil
-}
-
-// OpCode gets the opcode of the packet.
-func (*ServerLoginChallenge) OpCode() static.OpCode {
-	return static.OpCodeLoginChallenge
+	return buffer.Bytes()
 }
 
 // Handle will check the database for the account and send an appropriate response.
-func (pkt *ClientLoginChallenge) Handle(state *session.State) ([]session.ServerPacket, error) {
+func (pkt *ClientLoginChallenge) Handle() ([]packet.ServerPacket, error) {
 	response := new(ServerLoginChallenge)
-	response.Error = static.LoginOK
 
-	// Validate the packet.
-	gameName := strings.TrimRight(string(pkt.GameName[:]), "\x00")
-	if gameName != static.SupportedGameName {
-		response.Error = static.LoginFailed
-	} else if pkt.Version != static.SupportedGameVersion || pkt.Build != static.SupportedGameBuild {
-		response.Error = static.LoginBadVersion
-	} else {
-		for _, account := range state.Config.Accounts {
-			if strings.ToLower(account.Name) == strings.ToLower(string(pkt.AccountName)) {
-				state.Account = account
-				break
-			}
-		}
+	// TODO(jeshua): Read this data from a database instead.
+	salt := srp.GenerateSalt()
+	v := srp.GenerateVerifier("JESHUA", "JESHUA", salt)
 
-		if state.Account == nil {
-			response.Error = static.LoginUnknownAccount
-		}
-	}
+	// TODO(jeshua): Save this information with the session.
+	_, B := srp.GenerateEphemeral(v)
 
-	if response.Error == static.LoginOK {
-		b, B := srp.GenerateEphemeralPair(state.Account.Verifier())
-		state.PrivateEphemeral.Set(b)
-		state.PublicEphemeral.Set(B)
+	response.Error = 0
+	response.B.Set(B)
+	response.Salt.Set(salt)
+	response.SaltCRC.SetInt64(0)
 
-		response.B.Set(B)
-		response.Salt.Set(state.Account.Salt())
-		response.SaltCRC.SetInt64(0)
-	}
-
-	return []session.ServerPacket{response}, nil
+	return []packet.ServerPacket{response}, nil
 }

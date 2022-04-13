@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "game",
-    srcs = ["stats.go"],
-    importpath = "github.com/Extrabeefy/titan_core/server/world/game",
-    visibility = ["//visibility:public"],
-)
