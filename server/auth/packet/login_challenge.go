@@ -6,8 +6,8 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/Extrabeefy/titan-core/auth_server/srp"
-	"gitlab.com/Extrabeefy/titan-core/packet"
+	"github.com/Extrabeefy/titan-core/packet"
+	"github.com/Extrabeefy/titan-core/server/auth/srp"
 )
 
 // OpCodes used by the AuthServer.

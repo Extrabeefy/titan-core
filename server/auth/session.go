@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"log"
 
-	"github.com/Extrabeefy/titan-core/auth_server/packet"
+	"github.com/Extrabeefy/titan-core/auth/packet"
 )
 
 // RunSession takes control of the thread and listens for packets and responds to them.
